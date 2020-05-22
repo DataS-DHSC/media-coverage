@@ -16,13 +16,18 @@ server <- function(input, output) {
   
   # Run queries against GDELT v2
   results <- reactive({
+    req(length(values$query_list) > 0)
     # query_list <- list(list(prep_api(prep_query('test')), 'test')) # Only uncomment for testing
-    results <- purrr::map_dfr(values$query_list, prep_results)
+    withProgress(message = 'Crunching data', value = 0, {
+      results <- purrr::map_dfr(values$query_list, prep_results)
+      })
     return(results)
   })
   
   # Prepare data for visualisation
   weekly_data <- reactive({
+    req(length(values$query_list) > 0)
+    withProgress(message = 'Calculating', value = 0, {
     weekly_data <- dplyr::left_join(results(), covid_results(), 
                                  by = c('Date', 'Series')) %>%
       dplyr::mutate(prop_covid = (Value / all_covid) * 100,
@@ -34,17 +39,20 @@ server <- function(input, output) {
       dplyr::ungroup() %>%
       dplyr::filter(Series %in% c(input$countries, 'United Kingdom')) %>%
       dplyr::filter(nchar(query) > 2)
+    })
     return(weekly_data)
   })
   
   # Calculate the max y-value
   y_lim <- reactive({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::summarise(max_prop = max(prop_covid, na.rm = T))
   })
   
   #### VISUALISATIONS ####
   output$uk_plot <- renderPlot({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::filter(Series == 'United Kingdom') %>%
       dplyr::mutate(Series = toupper(Series)) %>%
@@ -61,6 +69,7 @@ server <- function(input, output) {
   })
   
   output$intl_plot <- renderPlot({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::filter(Series %in% input$countries) %>%
       dplyr::mutate(Series = toupper(Series)) %>%
@@ -70,7 +79,7 @@ server <- function(input, output) {
       scale_y_continuous(limits = c(0, y_lim()$max_prop))+
       scale_x_date(date_breaks = "2 week", date_labels =  "%d %b") +
       labs(x = NULL, y = '% of national COVID press coverage', col = '',
-           caption = "[Source: GDELT. Lines are a composite index of sub-themes. Each country's figures are calculated as a percentage of COVID coverage within that country.]") +
+           caption = "Source: GDELT. Lines are a composite index of sub-themes. Each country's figures are calculated as a percentage of COVID coverage within that country.") +
       thm+
       theme(legend.position = 'none')
   })
