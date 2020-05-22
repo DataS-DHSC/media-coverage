@@ -79,7 +79,7 @@ server <- function(input, output) {
       scale_y_continuous(limits = c(0, y_lim()$max_prop))+
       scale_x_date(date_breaks = "2 week", date_labels =  "%d %b") +
       labs(x = NULL, y = '% of national COVID press coverage', col = '',
-           caption = "[Source: GDELT. Lines are a composite index of sub-themes. Each country's figures are calculated as a percentage of COVID coverage within that country.]") +
+           caption = "Source: GDELT. Lines are a composite index of sub-themes. Each country's figures are calculated as a percentage of COVID coverage within that country.") +
       thm+
       theme(legend.position = 'none')
   })

@@ -8,6 +8,7 @@ library(purrr)
 library(ggplot2)
 
 library(shiny)
+library(shinythemes)
 library(rsconnect)
 
 source('functions/query_prep.R')
