@@ -7,6 +7,9 @@ library(readr)
 library(purrr)
 library(ggplot2)
 
+library(shiny)
+library(rsconnect)
+
 source('functions/query_prep.R')
 source('functions/results_prep.R')
 source('functions/visual_prep.R')
