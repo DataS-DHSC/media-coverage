@@ -12,7 +12,7 @@ prep_results <- function(q_list){
 }
 
 covid_results <- function(){
-  query <- prep_api(prep_query('(coronavirus OR virus OR pandemic OR epidemic OR covid OR corona)'))
+  query <- prep_api(prep_query(covid_query))
   covid_only <- prep_results(list(query, 'all_covid')) %>%
     dplyr::transmute(Date, 
                      Series = prep_country(Series),

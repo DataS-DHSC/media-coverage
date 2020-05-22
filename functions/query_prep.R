@@ -1,5 +1,7 @@
 prep_query <- function(q){
-    stringr::str_replace_all(q, ' ', '%20') %>% stringr::str_replace_all('"', '%22') %>% stringr::str_replace_all("'", "%22")
+  u <- paste0(q, ' ', covid_query)
+  u_rep <- stringr::str_replace_all(u, ' ', '%20') %>% stringr::str_replace_all('"', '%22') %>% stringr::str_replace_all("'", "%22")
+  return(u_rep)
 }
 
 prep_api <- function(q){

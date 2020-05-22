@@ -16,12 +16,14 @@ server <- function(input, output) {
   
   # Run queries against GDELT v2
   results <- reactive({
-    purrr::map_dfr(values$query_list, prep_results)
+    # query_list <- list(list(prep_api(prep_query('test')), 'test')) # Only uncomment for testing
+    results <- purrr::map_dfr(values$query_list, prep_results)
+    return(results)
   })
   
   # Prepare data for visualisation
   weekly_data <- reactive({
-    all_test <- dplyr::left_join(results(), covid_results(), 
+    weekly_data <- dplyr::left_join(results(), covid_results(), 
                                  by = c('Date', 'Series')) %>%
       dplyr::mutate(prop_covid = (Value / all_covid) * 100,
                     week = lubridate::floor_date(as.Date(Date), 'week')) %>%
@@ -29,7 +31,16 @@ server <- function(input, output) {
       dplyr::summarise(Value = mean(Value, na.rm = T),
                        all_covid = mean(all_covid, na.rm = T),
                        prop_covid = mean(prop_covid, na.rm = T)) %>%
-      dplyr::ungroup() 
+      dplyr::ungroup() %>%
+      dplyr::filter(Series %in% c(input$countries, 'United Kingdom')) %>%
+      dplyr::filter(nchar(query) > 2)
+    return(weekly_data)
+  })
+  
+  # Calculate the max y-value
+  y_lim <- reactive({
+    weekly_data() %>% 
+      dplyr::summarise(max_prop = max(prop_covid, na.rm = T))
   })
   
   #### VISUALISATIONS ####
@@ -41,7 +52,7 @@ server <- function(input, output) {
       geom_line(size=0.8, alpha = 0.8) +
       facet_wrap(~ Series) + 
       scale_x_date(date_breaks = "2 week", date_labels =  "%d %b") +
-      scale_y_continuous(limits = c(0, max(weekly_test$prop_covid)))+
+      scale_y_continuous(limits = c(0, y_lim()$max_prop))+
       labs(title = 'Percentage of COVID Press Coverage of Selected Issues',
            x = '', y = '% of national COVID press coverage', 
            col = '') +
@@ -56,7 +67,7 @@ server <- function(input, output) {
       ggplot(aes(week, prop_covid, col = query)) + 
       geom_line(size=0.8, alpha = 0.8) +
       facet_wrap(~ Series, ncol = 2, scales = 'free_x') + 
-      scale_y_continuous(limits = c(0, max(weekly_test$prop_covid)))+
+      scale_y_continuous(limits = c(0, y_lim()$max_prop))+
       scale_x_date(date_breaks = "2 week", date_labels =  "%d %b") +
       labs(x = NULL, y = '% of national COVID press coverage', col = '',
            caption = "[Source: GDELT. Lines are a composite index of sub-themes. Each country's figures are calculated as a percentage of COVID coverage within that country.]") +
@@ -65,34 +76,40 @@ server <- function(input, output) {
   })
   
   #### KEY POINTS ####
+  # Calculate changes week-on-week
   differences <- reactive({
-    weekly_data() %>% 
+    differences <- weekly_data() %>% 
       dplyr::filter((week == max(week) | week == max(week) - 7) & Series == 'United Kingdom') %>%
       dplyr::group_by(query, Series) %>%
       dplyr::arrange(week) %>%
-      dplyr::mutate(difference = Value - lag(Value),
-                    pct_change = difference / lag(Value)) %>%
+      dplyr::mutate(difference = prop_covid - lag(prop_covid),
+                    pct_change = difference / lag(prop_covid)) %>%
       dplyr::ungroup() %>%
       dplyr::filter(!is.na(difference))
+    return(differences)
   })
   
+  # Highest coverage in the UK
   highest <- reactive({
     weekly_data() %>% 
       dplyr::filter(Series == 'United Kingdom') %>% 
       dplyr::group_by(query) %>% 
-      dplyr::summarise(Value = sum(Value))
+      dplyr::summarise(prop_covid = sum(prop_covid, na.rm = T))
   }) 
   
+  # Most recent value in the UK
   latest <- reactive({
     weekly_data() %>% 
       dplyr::filter(Series == 'United Kingdom' & week == max(week))
   })
   
+  # Highest coverage across countries
   top_intl <- reactive({
     weekly_data() %>% 
-      dplyr::filter(Value == max(Value))
+      dplyr::filter(Value == max(Value, na.rm = T))
   })
   
+  # Phrasing absolute and relative increases / decreases in coverage
   incr <- reactive({
     abs_change <- differences() %>% 
       dplyr::filter(abs(difference) == max(abs(difference)))
@@ -108,9 +125,10 @@ server <- function(input, output) {
     return(incr)
   })
   
+  # Put key points together
   comments <- reactive({
-    c(paste0('Of the media topics monitored, ', highest()$query[which(highest()$Value == max(highest()$Value))], ' has had the most coverage. '),
-                  paste0('Currently, ', latest()$query[which(latest()$Value == max(latest()$Value))], ' is having the most coverage. '),
+    c(paste0('Of the media topics monitored, ', highest()$query[which(highest()$prop_covid == max(highest()$prop_covid, na.rm = T))], ' has had the most coverage. '),
+                  paste0('Currently, ', latest()$query[which(latest()$prop_covid == max(latest()$prop_covid, na.rm = T))], ' is having the most coverage. '),
                   paste0('The highest proportion of COVID media coverage in the past 4 months was on the topic of ', top_intl()$query,' on ',format(top_intl()$week, '%d %B'), '. '),
                   incr())
   })
