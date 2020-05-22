@@ -18,13 +18,16 @@ server <- function(input, output) {
   results <- reactive({
     req(length(values$query_list) > 0)
     # query_list <- list(list(prep_api(prep_query('test')), 'test')) # Only uncomment for testing
-    results <- purrr::map_dfr(values$query_list, prep_results)
+    withProgress(message = 'Crunching data', value = 0, {
+      results <- purrr::map_dfr(values$query_list, prep_results)
+      })
     return(results)
   })
   
   # Prepare data for visualisation
   weekly_data <- reactive({
     req(length(values$query_list) > 0)
+    withProgress(message = 'Calculating', value = 0, {
     weekly_data <- dplyr::left_join(results(), covid_results(), 
                                  by = c('Date', 'Series')) %>%
       dplyr::mutate(prop_covid = (Value / all_covid) * 100,
@@ -36,6 +39,7 @@ server <- function(input, output) {
       dplyr::ungroup() %>%
       dplyr::filter(Series %in% c(input$countries, 'United Kingdom')) %>%
       dplyr::filter(nchar(query) > 2)
+    })
     return(weekly_data)
   })
   
