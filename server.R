@@ -16,6 +16,7 @@ server <- function(input, output) {
   
   # Run queries against GDELT v2
   results <- reactive({
+    req(length(values$query_list) > 0)
     # query_list <- list(list(prep_api(prep_query('test')), 'test')) # Only uncomment for testing
     results <- purrr::map_dfr(values$query_list, prep_results)
     return(results)
@@ -23,6 +24,7 @@ server <- function(input, output) {
   
   # Prepare data for visualisation
   weekly_data <- reactive({
+    req(length(values$query_list) > 0)
     weekly_data <- dplyr::left_join(results(), covid_results(), 
                                  by = c('Date', 'Series')) %>%
       dplyr::mutate(prop_covid = (Value / all_covid) * 100,
@@ -39,12 +41,14 @@ server <- function(input, output) {
   
   # Calculate the max y-value
   y_lim <- reactive({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::summarise(max_prop = max(prop_covid, na.rm = T))
   })
   
   #### VISUALISATIONS ####
   output$uk_plot <- renderPlot({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::filter(Series == 'United Kingdom') %>%
       dplyr::mutate(Series = toupper(Series)) %>%
@@ -61,6 +65,7 @@ server <- function(input, output) {
   })
   
   output$intl_plot <- renderPlot({
+    req(length(values$query_list) > 0)
     weekly_data() %>% 
       dplyr::filter(Series %in% input$countries) %>%
       dplyr::mutate(Series = toupper(Series)) %>%
