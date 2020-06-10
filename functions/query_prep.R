@@ -1,6 +1,10 @@
 prep_query <- function(q){
   u <- paste0(q, ' ', covid_query)
-  u_rep <- stringr::str_replace_all(u, ' ', '%20') %>% stringr::str_replace_all('"', '%22') %>% stringr::str_replace_all("'", "%22")
+  u_rep <- stringr::str_replace_all(u, ' ', '%20') %>% 
+    stringr::str_replace_all('"', '%22') %>% 
+    stringr::str_replace_all("'", "%22") %>% 
+    stringr::str_replace_all('\\(', '%28') %>% 
+    stringr::str_replace_all('\\)', '%29')
   return(u_rep)
 }
 
