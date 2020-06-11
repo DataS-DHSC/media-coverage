@@ -3,19 +3,17 @@ prep_country <- function(country){
 }
 
 prep_results <- function(q_list){
-  out <- read.csv(q_list[[1]], stringsAsFactors = FALSE)
+  out <- read_gdelt_json(q_list[[1]])
   if(nrow(out) > 0){
     out$query <- q_list[[2]]
     out$Series <- prep_country(out$Series)
+    return(out)
   }
-  colnames(out) <- c('Date', 'Series', 'Value', 'query')
-  return(out)
 }
 
 covid_results <- function(){
   query <- prep_api(prep_query(covid_query))
   covid_only <- prep_results(list(query, 'all_covid'))
-  colnames(covid_only) <- c('Date', 'Series', 'Value', 'query')
   covid_only <- covid_only %>%
     dplyr::transmute(Date, 
                      Series = prep_country(Series),
