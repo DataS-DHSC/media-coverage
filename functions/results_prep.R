@@ -3,11 +3,13 @@ prep_country <- function(country){
 }
 
 prep_results <- function(q_list){
-  out <- read_gdelt_json(q_list[[1]])
-  if(nrow(out) > 0){
-    out$query <- q_list[[2]]
-    out$Series <- prep_country(out$Series)
-    return(out)
+  if(nchar(q_list[[2]]) > 0){
+    out <- read_gdelt_json(q_list[[1]])
+    if(nrow(out) > 0){
+      out$query <- q_list[[2]]
+      out$Series <- prep_country(out$Series)
+      return(out)
+  }
   }
 }
 

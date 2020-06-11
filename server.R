@@ -24,11 +24,15 @@ server <- function(input, output) {
     return(results)
   })
   
+  covid_only <- reactive({
+    covid_results()
+  })
+  
   # Prepare data for visualisation
   weekly_data <- reactive({
     req(length(values$query_list) > 0)
     withProgress(message = 'Calculating', value = 0, {
-    weekly_data <- dplyr::left_join(results(), covid_results(), 
+    weekly_data <- dplyr::left_join(results(), covid_only(), 
                                  by = c('Date', 'Series')) %>%
       dplyr::mutate(prop_covid = (Value / all_covid) * 100,
                     week = lubridate::floor_date(as.Date(Date), 'week')) %>%
