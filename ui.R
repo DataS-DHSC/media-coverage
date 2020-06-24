@@ -1,13 +1,12 @@
 ui <- fluidPage(theme = shinythemes::shinytheme("flatly"),
   titlePanel("COVID media coverage tool"),
-  p(),
   p(paste0("This tool was built to compare different sub-themes of COVID coverage. You can compare up to 6 queries, and any country in the world. Baseline total COVID coverage for each country in each week is defined according to that nation's result for the query: '", covid_query, "'")),
   p('The underlying data is the GDELT v2 API. For documentation on how to write these queries, go to: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/'),
-  p(),
+  h2('How to use the tool'),
   tags$ul(
-    tags$li('Step one: enter your queries and query names in the boxes on the left.'), 
+    tags$li('Step one: enter your queries (for example: "(PPE OR masks)") and query names (for example: "PPE") in the boxes on the left.'), 
     tags$li('Step two: select the countries you want to compare to in the top.'), 
-    tags$li('Step three: press "RUN QUERIES"')
+    tags$li('Step three: press "RUN QUERIES" and wait for the calculations to run.')
   ),
   hr(),
   sidebarLayout(
